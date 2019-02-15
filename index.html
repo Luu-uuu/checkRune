@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html style="background-color:rgba(0,0,0,0);overflow: hidden;">
+  <body>
+  <img id="powerRune" style="visibility:hidden;position: absolute;top: 0px; right: 0px;" src="assets/allRunes.png">
+  <img id="bountyRune" style="visibility:hidden;position: absolute;top: 0px; right: 0px;" src="assets/bountyRune.png">
+  <p id="roshanTimer"></p>
+	
+	<script>
+	
+	http = require('http');
+	fs = require('fs');
+	const {ipcRenderer} = require('electron')
+
+	port = 3000;
+	host = '127.0.0.1';
+	
+	roshTimer = 0
+
+server = http.createServer( function(req, res) {
+
+    if (req.method == 'POST') {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+
+        var body = '';
+        req.on('data', function (data) {
+            body += data;
+        });
+        req.on('end', function () {
+			var dataObj = JSON.parse(body)
+			
+			if(dataObj.map.clock_time > 0)
+			{
+			
+				if( (dataObj.map.clock_time + 15) % 120  == 0)
+				{
+					//power rune
+					document.body.style.backgroundColor = "rgba(255,206,203,.1)";
+					var img = document.getElementById("powerRune");
+					img.style.visibility = "visible"
+					
+					setTimeout(function(){
+					document.body.style.backgroundColor = "rgba(0,0,0,0)";
+					img.style.visibility = "hidden"
+					},4000);
+				}
+				
+				if( (dataObj.map.clock_time + 15) % 300  == 0)
+				{
+					//bounty rune
+					document.body.style.backgroundColor = "rgba(255,206,51,.1)";
+					var img2 = document.getElementById("bountyRune");
+					img2.style.visibility = "visible"
+					if (document.getElementById("powerRune").style.visibility == "visible")
+					{
+						img2.style.right = "63px"
+					}
+					else 
+					{
+						img2.style.right = "0px"
+					}
+					
+					setTimeout(function(){
+					document.body.style.backgroundColor = "rgba(0,0,0,0)";
+					img2.style.visibility = "hidden"
+					},4000);
+					
+				}
+				ipcRenderer.on('roshanTimer', (event, arg) => {
+					rosh = document.getElementById("roshanTimer")
+					rosh.style.color="white"
+					earliestTime = Math.trunc((dataObj.map.clock_time + 480)/60) + ":" + (dataObj.map.clock_time + 480)%60
+					latestTime = Math.trunc((dataObj.map.clock_time + 660)/60) + ":" + (dataObj.map.clock_time + 660)%60
+					document.body.style.backgroundColor = "rgba(255,255,255,.01)"
+					rosh.innerHTML =  earliestTime + " - " + latestTime
+
+				})
+			}
+        	
+			res.end( '' );
+        });
+    }
+    else
+    {
+        document.write("Not expecting other request types...");
+        res.writeHead(200, {'Content-Type': 'text/html'});
+		var html = '<html><body>HTTP Server at http://' + host + ':' + port + '</body></html>';
+        res.end(html);
+    }
+	
+});
+
+server.listen(port, host);
+	</script>
+  </body>
+</html>
